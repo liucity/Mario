@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>Mario - JavaScript</title>
+        <style>
+            * {margin: 0;}
+        </style>
+	</head>
+	<body>
+		<canvas id="canvas" width="320" height="240" style="border: 1px solid #efefef">
+			<p>Your browser does not support the canvas element.</p>
+		</canvas>
+        <script type="text/javascript" src="./code/Util.js"></script>
+        <script type="text/javascript" src="./code/EventHandler.js"></script>
+        <script type="text/javascript" src="./code/Drawable.js"></script>
+        <script type="text/javascript" src="./code/Canvas.js"></script>
+        <script type="text/javascript" src="./code/ResourceManager.js"></script>
+        <script type="text/javascript" src="./code/BackgroundGenerator.js"></script>
+        <script type="text/javascript" src="./code/State.js"></script>
+        <script type="text/javascript" src="./code/TitleState.js"></script>
+        <script type="text/javascript" src="./code/LoadingState.js"></script>
+        <script type="text/javascript" src="./code/OperationCenter.js"></script>
+        <script type="text/javascript" src="./code/Character.js"></script>
+        <script type="text/javascript" src="./code/Camera.js"></script>
+        <script type="text/javascript" src="./code/Mario.js"></script>
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function(event) {
+                window.mario = new Mario(document.querySelector('canvas'));
+            });
+        </script>
+    </body>
+</html>
