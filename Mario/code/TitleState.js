@@ -6,6 +6,7 @@
         this.main = main;
         this.control = main.control;
         this.npc = main.character;
+        this.resource = main.resource
 
         var resource = main.resource;
         var backgroundGenerator = new global.BackgroundGenerator(resource);
@@ -41,6 +42,7 @@
             var self = this;
             var character = this.npc;
             var camera = this.camera;
+            var resource = this.resource;
             this.control.on('keydown.title', function(e){
                 character.keydown(e.key);
             });
@@ -48,9 +50,18 @@
                 character.keyup(e.key);
             });
 
-            character.off('moved');
-            character.on('moved', function(x, y){
+            // resource.playAudio('background', true);
+            character.off('moved').on('moved', function(x, y){
                 camera.setLocation(x, y);
+            })
+            character.off('jumpStart').on('jumpStart', function(x, y){
+                resource.playAudio('jump');
+            })
+            character.off('levelUp').on('levelUp', function(x, y){
+                resource.playAudio('powerup');
+            })
+            character.off('levelDown').on('levelDown', function(x, y){
+                resource.playAudio('powerdown');
             })
             // this.control.on('orientationchange', function(e){
             //     key.code = window.orientation;

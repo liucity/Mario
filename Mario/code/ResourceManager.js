@@ -4,6 +4,7 @@
     var ResourceManager = function(){
         this.images = {};
         this.sounds = {};
+        this.midis = {};
         this.total = 0;
         this.count = 0;
         this.basePath = '';
@@ -34,6 +35,13 @@
             this.total += 1; 
             return this;
         },
+        playAudio: function(name, loop){
+            var audio = this.sounds[name];
+            if(audio){
+                audio.loop = !!loop;
+                audio.play();
+            }
+        },
         getImage: function(name){
             return this.images[name];
         },
@@ -53,6 +61,24 @@
             if(this.count === this.total){
                 this.fire('onAllLoaded');
             }
+        },
+        addMIDI: function(name, src){
+            this.midis[name] = this.basePath + src;
+            return this;
+        },
+        playMIDI: function(name){
+            if(!this.midis[name]){
+                return console.error("Cannot play music track " + name + " as i have no data for it.");
+            }
+            // Currently we stop all playing tracks when playing a new one
+            // MIDIjs can't play multiple at one time
+            MIDIjs.stop();
+            MIDIjs.play(this.midis[name]);
+            return this;
+        },
+        stopMIDI: function(){
+            MIDIjs.stop();
+            return this;
         }
     });
 

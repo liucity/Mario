@@ -28,7 +28,7 @@
                     new Handler(name, callback)
                 );
             })
-            this.setHandlers(name, handlers);
+            return this.setHandlers(name, handlers);
         },
         one: function(name){
             name = name + '.once';
@@ -44,7 +44,7 @@
                 });
                 handlers.push(handler);
             })
-            this.setHandlers(name, handlers);
+            return this.setHandlers(name, handlers);
         },
         off: function(name){
             var handlers = this.getHandlers(name) || [];
@@ -52,7 +52,7 @@
             handlers = filter(handlers, function(handler){
                 return !reg.test(handler.name);
             });
-            this.setHandlers(name, handlers);
+            return this.setHandlers(name, handlers);
         },
         fire: function(name){
             var handlers = this.getHandlers(name) || [];
@@ -61,6 +61,7 @@
             each(handlers, function(handler){
                 return handler.callback.apply(self, args);
             });
+            return this;
         },
         getHandlers: function(name){
             var names = getNames(name);
@@ -69,6 +70,7 @@
         setHandlers: function(name, handlers){
             var names = getNames(name);
             this._handler[names[0]] = handlers;
+            return this;
         }
     }
 

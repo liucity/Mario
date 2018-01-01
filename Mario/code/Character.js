@@ -18,6 +18,7 @@
         RIGHT: 1
     };
     var level = {
+        deadMario: 0,
         smallMario: 1,
         mario: 2,
         fireMario: 3
@@ -34,7 +35,7 @@
     }
     var max = {
         speed: 150,
-        jump: 250
+        jump: 150
     }
 
     var Character = function(main){
@@ -229,6 +230,9 @@
 
         jump: function(dt){
             var speed = this.climbSpeed;
+            if(!speed) {
+                this.fire('jumpStart', this.x, this.y);
+            }
             if(speed < max.jump) {
                 speed = Math.min(speed + this.climbAcceleration * dt, max.jump);
             }
@@ -239,18 +243,20 @@
         fall: function(dt){
             var speed = this.climbSpeed;
             speed = speed - this.climbAcceleration * dt;
+            this.fire('fall', this.x, this.y);
             this.climbSpeed = speed;
         },
 
         attack: function(){
             switch(this.level){
                 case level.fireMario:
-
+                    this.fire('attack', this.x, this.y);
                     break;
             }
         },
         
         stomp: function(){
+            this.fire('stomp', this.x, this.y);
 
         },
 
@@ -275,8 +281,11 @@
         },
 
         levelUp: function(max){
-            this.level = Math.min(this.level + 1, max);
+            var level = this.level;
+            this.level = Math.min(level + 1, max);
             this.refreshResource();
+            if(level !== this.level)
+                this.fire('levelUp', this.x, this.y);
         },
 
         levelDown: function(){
@@ -284,6 +293,8 @@
             this.refreshResource();
             if(!this.level){
                 this.die();
+            }else{
+                this.fire('levelDown', this.x, this.y);
             }
         },
 
@@ -302,6 +313,8 @@
                 case level.fireMario:
                     imgResourceKey = 'fireMario';
                     frameSize = 32;
+                    break;
+                case level.deadMario:
                     break;
                 default:
                     throw new {
@@ -322,6 +335,7 @@
 
         die: function(){
             this.status = status.dying;
+            this.fire('die.start', this.x, this.y);
         },
 
         getTimeStamp: function(key, t){
