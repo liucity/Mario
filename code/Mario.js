@@ -31,53 +31,13 @@
         this.acceleration = max.speed * 3;
         this.climbSpeed = 0;
         this.climbAcceleration = max.jump * 3;
+        this.frameSX = 0;
         
         this.keys = {};
-        
-        this.init();
     }
 
     Mario.prototype = new Character({
         init: function(){
-            var self = this;
-            var h = this.h;
-
-            this.image = new Drawable({
-                source: null,
-                frameSX: 0,
-                maxFrame: 11,
-                frameSize: 16,
-                draw: function(ctx, t){
-                    if(this.source) {
-                        var frameSize = this.frameSize;
-                        var flip = self.face === direction.LEFT;
-                        var frame = 0;
-                        
-                        switch(self.status){
-                            case status.moving:
-                                frame = getFrame(self.x - this.frameSX) % 2; 
-                                break;
-                            case status.jumping:
-                                frame = getFrame(self.x - this.frameSX) % 2 + 2;
-                                break;
-                            case status.carried:
-                                frame = getFrame(self.x - this.frameSX) % 2 + 8;
-                                break;
-                        }
-    
-                        ctx.fillText(frame, 50, 50);
-    
-                        ctx.save();
-                        ctx.translate(self.x, h - self.y - frameSize);
-                        ctx.scale(flip ? -1 : 1, 1);
-                        ctx.drawImage(this.source, frame * frameSize, 0, frameSize, frameSize,
-                                                    -frameSize / 2, 0, frameSize, frameSize);
-                        ctx.restore();
-                    }
-                }
-            });
-            
-            this.refreshResource();
         },
 
         keydown: function(key){
@@ -91,7 +51,33 @@
         draw: function(ctx, t){
             this.updateStatus(t);
 
-            this.image.draw(ctx, t);
+            var source = this.source();
+            if(source) {
+                var frameSize = this.frameSize();
+                var flip = this.face === direction.LEFT;
+                var frame = 0;
+                
+                switch(this.status){
+                    case status.moving:
+                        frame = getFrame(this.x - this.frameSX) % 2; 
+                        break;
+                    case status.jumping:
+                        frame = getFrame(this.x - this.frameSX) % 2 + 2;
+                        break;
+                    case status.carried:
+                        frame = getFrame(this.x - this.frameSX) % 2 + 8;
+                        break;
+                }
+
+                ctx.fillText(frame, 50, 50);
+
+                ctx.save();
+                ctx.translate(this.x, this.h - this.y - frameSize);
+                ctx.scale(flip ? -1 : 1, 1);
+                ctx.drawImage(source, frame * frameSize, 0, frameSize, frameSize,
+                                            -frameSize / 2, 0, frameSize, frameSize);
+                ctx.restore();
+            }
         },
 
         updateStatus: function(t){
@@ -148,7 +134,7 @@
             this.y = Math.max(this.y + this.climbSpeed * dt, 0);
 
             if(this.speed === 0){
-                this.image.frameSX = this.x;
+                this.frameSX = this.x;
             }
             if(this.y === 0) {
                 this.climbSpeed = 0;
@@ -174,7 +160,6 @@
 
         move: function(dt, _direction){
             var speed = this.speed;
-            var face = this.face;
 
             switch(_direction){
                 case direction.LEFT:
@@ -256,14 +241,12 @@
         levelUp: function(max){
             var level = this.level;
             this.level = Math.min(level + 1, max);
-            this.refreshResource();
             if(level !== this.level)
                 this.fire('levelUp', this.x, this.y);
         },
 
         levelDown: function(){
             this.level--;
-            this.refreshResource();
             if(!this.level){
                 this.die();
             }else{
@@ -271,39 +254,45 @@
             }
         },
 
-        refreshResource: function(){
+        source: function(){
             var imgResourceKey = '';
-            var frameSize = 0;
             switch(this.level){
                 case level.smallMario:
                     imgResourceKey = 'smallMario';
-                    frameSize = 16;
                     break;
                 case level.mario:
                     imgResourceKey = 'mario';
-                    frameSize = 32;
                     break;
                 case level.fireMario:
                     imgResourceKey = 'fireMario';
+                    break;
+                case level.deadMario:
+                    break;
+                default:
+                    break;
+            }
+
+            return this.resource.getImage(imgResourceKey);
+        },
+
+        frameSize: function(){
+            var frameSize = 0;
+            switch(this.level){
+                case level.smallMario:
+                    frameSize = 16;
+                    break;
+                case level.mario:
+                    frameSize = 32;
+                    break;
+                case level.fireMario:
                     frameSize = 32;
                     break;
                 case level.deadMario:
                     break;
                 default:
-                    throw {
-                        Msg: 'shit!!'
-                    }
                     break;
             }
-
-            this.image.source = this.resource.getImage(imgResourceKey);
-            this.image.frameSize = frameSize;
-            if(!this.image.source){
-                var self = this;
-                this.resource.one('onAllLoaded', function(){
-                    self.refreshResource();
-                });
-            }
+            return frameSize;
         },
 
         getTimeStamp: function(key, t){
