@@ -115,7 +115,7 @@
             foregroundTemp.height = h;
             var tctx = foregroundTemp.getContext("2d");
             
-            getMap(h / distance - 3, w / distance).forEach(function(arr, c){
+            getMap(h / distance - 3, w / distance + 1).forEach(function(arr, c){
                 arr.forEach(function(t, r){
                     var imgMap = bkImageMap[t];
                     if(!imgMap) return;

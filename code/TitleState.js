@@ -9,10 +9,10 @@
         this.resource = main.resource
 
         var resource = main.resource;
+        var distance = 32;
         var backgroundGenerator = new global.BackgroundGenerator(resource);
         var w = main.canvas.width;
         var h = main.canvas.height;
-        var distance = 32;
         var rows = h / distance;
         var cols = w / distance;
 
@@ -33,6 +33,13 @@
             source: backgroundGenerator.getForeground(w / 2 + main.width, main.height, rows, cols, distance),
             draw: function(ctx, t){
                 ctx.drawImage(this.source, this.x + camera.x, this.y, w, h, this.x, this.y, w, h);
+            }
+        });
+
+        var map = new global.MapGenerator(resource, w, h);
+        this.map = new Drawable({
+            draw: function(ctx, t){
+                map.draw(ctx);
             }
         });
     }
@@ -72,8 +79,9 @@
             var camera = this.camera;
             var player = this.player;
 
-            // this.background.draw(ctx, t);
-            // this.foreground.draw(ctx, t);
+            this.background.draw(ctx, t);
+            this.foreground.draw(ctx, t);
+            this.map.draw(ctx, t);
             
             ctx.fillText(Math.round(camera.x) + ':' + Math.round(camera.y), 50, 90);
             ctx.fillText(Math.round(player.x) + ':' + Math.round(player.y), 50, 70);
