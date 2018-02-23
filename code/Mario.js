@@ -1,42 +1,32 @@
 (function(global){
-    var Character = global.Character;
+    var Defines = global.Defines;
 
-    var status = Character.status;
-    var direction = Character.direction;
-
-    var level = {
-        deadMario: 0,
-        smallMario: 1,
-        mario: 2,
-        fireMario: 3
-    }
-
-    var max = {
-        speed: 150,
-        jump: 150
-    }
+    var status = Defines.status;
+    var direction = Defines.direction;
+    var level = Defines.MarioLevel;
+    var limitation = Defines.MarioLimitation;
 
     var getFrame = function(val){
         return Math.abs((val / 10) | 0);
     }
 
     var Mario = function(main){
-        this.w = main.canvas.width;
-        this.h = main.canvas.height;
         this.resource = main.resource;
 
+        this.customDraw = true;
         this.level = level.smallMario;
+        this.refreshSource();
         this.lives = 3;
         this.coins = 0;
-        this.acceleration = max.speed * 3;
+        this.acceleration = limitation.speed * 3;
         this.climbSpeed = 0;
-        this.climbAcceleration = max.jump * 3;
+        this.climbAcceleration = limitation.jump * 3;
         this.frameSX = 0;
         
         this.keys = {};
     }
 
-    Mario.prototype = new Character({
+    Mario.prototype = new global.DrawableItem({
         init: function(){
         },
 
@@ -51,9 +41,8 @@
         draw: function(ctx, t){
             this.updateStatus(t);
 
-            var source = this.source();
-            if(source) {
-                var frameSize = this.frameSize();
+            var img = this.resource.getImage(this.imgKey);
+            if(img) {
                 var flip = this.face === direction.LEFT;
                 var frame = 0;
                 
@@ -72,10 +61,13 @@
                 ctx.fillText(frame, 50, 50);
 
                 ctx.save();
-                ctx.translate(this.x, this.h - this.y - frameSize);
+                ctx.translate(Math.round(this.x), Math.round(this.fixedY));
                 ctx.scale(flip ? -1 : 1, 1);
-                ctx.drawImage(source, frame * frameSize, 0, frameSize, frameSize,
-                                            -frameSize / 2, 0, frameSize, frameSize);
+                ctx.drawImage(img, frame * this.w, 0, this.w, this.h,
+                                            -this.w / 2, 0, this.w, this.h);
+                // ctx.rect(-this.w / 2, 0, this.w, this.h);
+                // ctx.strokeStyle = 'red';
+                // ctx.stroke();
                 ctx.restore();
             }
         },
@@ -103,7 +95,7 @@
                         case ' ':
                             if(!this.ignoreJump) {
                                 this.jump(dt);
-                                if(this.y > Math.pow(max.jump, 2) / this.climbAcceleration / 2) this.ignoreJump = true; // max height = 1/2 * v * v / a
+                                if(this.y > Math.pow(limitation.jump, 2) / this.climbAcceleration / 2) this.ignoreJump = true; // max height = 1/2 * v * v / a
                             }
                             isJump = true;
                             break;
@@ -130,20 +122,27 @@
                 this.ignoreJump = true;
             }
 
-            this.x += this.speed * dt;
-            this.y = Math.max(this.y + this.climbSpeed * dt, 0);
+            var newX = this.x + this.speed * dt;
+            var newY = Math.max(this.y + this.climbSpeed * dt, 0);
 
             if(this.speed === 0){
-                this.frameSX = this.x;
+                this.frameSX = newX;
             }
-            if(this.y === 0) {
+            if(newY === 0) {
                 this.climbSpeed = 0;
                 this.ignoreJump = false;
             }
 
             if(this.speed || this.climbSpeed){
-                this.fire('moved', this.x, this.y);
+                if(this.fire('moved', newX, newY) === false){
+                    newX = this.x;
+                    newY = this.y;
+                    this.frameSX = this.x;
+                }
             }
+
+            this.x = newX;
+            this.y = newY;
             
             if(_status !== status.dying){
                 if(this.y) {
@@ -163,10 +162,10 @@
 
             switch(_direction){
                 case direction.LEFT:
-                    if(speed > -max.speed) speed = Math.max(speed - this.acceleration * dt, -max.speed); 
+                    if(speed > -limitation.speed) speed = Math.max(speed - this.acceleration * dt, -limitation.speed); 
                     break;
                 case direction.RIGHT:
-                    if(speed < max.speed) speed = Math.min(speed + this.acceleration * dt, max.speed);
+                    if(speed < limitation.speed) speed = Math.min(speed + this.acceleration * dt, limitation.speed);
                     break;
             }
             
@@ -191,8 +190,13 @@
             if(!speed) {
                 this.fire('jumpStart', this.x, this.y);
             }
-            if(speed < max.jump) {
-                speed = Math.min(speed + this.climbAcceleration * dt, max.jump);
+            if(this.fire('jump', this.x, this.y) === false){
+                this.climbSpeed = 0;
+                this.ignoreJump = true;
+                return;
+            }
+            if(speed < limitation.jump) {
+                speed = Math.min(speed + this.climbAcceleration * dt, limitation.jump);
             }
 
             this.climbSpeed = speed;
@@ -201,7 +205,10 @@
         fall: function(dt){
             var speed = this.climbSpeed;
             speed = speed - this.climbAcceleration * dt;
-            this.fire('fall', this.x, this.y);
+            if(this.fire('fall', this.x, this.y) === false){
+                this.climbSpeed = 0;
+                return;
+            }
             this.climbSpeed = speed;
         },
 
@@ -241,12 +248,14 @@
         levelUp: function(max){
             var level = this.level;
             this.level = Math.min(level + 1, max);
+            this.refreshSource();
             if(level !== this.level)
                 this.fire('levelUp', this.x, this.y);
         },
 
         levelDown: function(){
             this.level--;
+            this.refreshSource();
             if(!this.level){
                 this.die();
             }else{
@@ -254,16 +263,21 @@
             }
         },
 
-        source: function(){
+        refreshSource: function(){
+            var frameSize = 0;
             var imgResourceKey = '';
+
             switch(this.level){
                 case level.smallMario:
+                    frameSize = 16;
                     imgResourceKey = 'smallMario';
                     break;
                 case level.mario:
+                    frameSize = 32;
                     imgResourceKey = 'mario';
                     break;
                 case level.fireMario:
+                    frameSize = 32;
                     imgResourceKey = 'fireMario';
                     break;
                 case level.deadMario:
@@ -271,28 +285,9 @@
                 default:
                     break;
             }
-
-            return this.resource.getImage(imgResourceKey);
-        },
-
-        frameSize: function(){
-            var frameSize = 0;
-            switch(this.level){
-                case level.smallMario:
-                    frameSize = 16;
-                    break;
-                case level.mario:
-                    frameSize = 32;
-                    break;
-                case level.fireMario:
-                    frameSize = 32;
-                    break;
-                case level.deadMario:
-                    break;
-                default:
-                    break;
-            }
-            return frameSize;
+            this.w = frameSize;
+            this.h = frameSize;
+            this.imgKey = imgResourceKey;
         },
 
         getTimeStamp: function(key, t){

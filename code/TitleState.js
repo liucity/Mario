@@ -36,20 +36,28 @@
             }
         });
 
-        var map = new global.MapGenerator(resource, w, h);
-        this.map = new Drawable({
-            draw: function(ctx, t){
-                map.draw(ctx);
-            }
-        });
+        var generator = new global.MapGenerator(resource);
+        this.map = generator.generateMap(w, h);
+        console.log(this.map)
     }
 
     TitleState.prototype = new State({
         init: function(){
             var self = this;
+            var map = this.map;
             var player = this.player;
             var camera = this.camera;
             var resource = this.resource;
+            var locationChanged = function(x, y){
+                if(map.locate(player, x, y)){
+                    camera.setLocation(x, y);
+                }else{
+                    return false;
+                }
+            };
+
+            map.add(player);
+
             this.control.on('keydown.title', function(e){
                 player.keydown(e.key);
             });
@@ -62,9 +70,9 @@
             MIDI.Player.loadFile('./midi/background.mid', function(){
                 console.log(arguments);
             });
-            player.off('moved').on('moved', function(x, y){
-                camera.setLocation(x, y);
-            })
+            player.off('moved').on('moved', locationChanged);
+            player.off('jump').on('jump', locationChanged);
+            player.off('fall').on('fall', locationChanged);
             player.off('jumpStart').on('jumpStart', function(x, y){
                 resource.playAudio('jump');
             })
@@ -78,10 +86,12 @@
         draw: function(ctx, t){
             var camera = this.camera;
             var player = this.player;
+            var resource = this.resource;
 
             this.background.draw(ctx, t);
             this.foreground.draw(ctx, t);
-            this.map.draw(ctx, t);
+
+            this.map.draw(ctx, resource, camera.x, camera.y);
             
             ctx.fillText(Math.round(camera.x) + ':' + Math.round(camera.y), 50, 90);
             ctx.fillText(Math.round(player.x) + ':' + Math.round(player.y), 50, 70);

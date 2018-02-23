@@ -1,9 +1,7 @@
 (function(global){
-    var Canvas = global.Canvas;
-
     var Game = function(dom){
         this.zoom = 2;
-        this.canvas = new Canvas(dom, this.zoom);
+        this.canvas = new global.Canvas(dom, this.zoom);
         this.resource = new global.ResourceManager();
         this.control = new global.OperationCenter(this, dom);
         this.player = new global.Mario(this);

@@ -1,11 +1,9 @@
 (function(global){
-    var EventHandler = global.EventHandler;
-
     var State = function(props){
         Object.assign(this, props);
     }
 
-    State.prototype = new EventHandler({
+    State.prototype = new global.EventHandler({
         init: function(){
             
         },

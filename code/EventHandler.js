@@ -58,10 +58,11 @@
             var handlers = this.getHandlers(name) || [];
             var args = toArray(arguments, 1);
             var self = this;
+            var rst;
             each(handlers, function(handler){
-                return handler.callback.apply(self, args);
+                rst = handler.callback.apply(self, args);
             });
-            return this;
+            return rst;
         },
         getHandlers: function(name){
             var names = getNames(name);
