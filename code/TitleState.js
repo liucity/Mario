@@ -16,28 +16,25 @@
         var rows = h / distance;
         var cols = w / distance;
 
-        var camera = new global.Camera(w, h);
-        camera.mWidth(main.width);
-        camera.mHeight(main.height);
-        this.camera = camera;
+        var generator = new global.MapGenerator(resource);
+        var map = generator.generateMap(resource, main.width, main.height, w, h);
 
         //resource.cacheImage('overBackground', temp);
         this.background = new Drawable({
             source: backgroundGenerator.getBackground(w + (main.width - w / 2) / 4, main.height, rows, cols, distance),
             draw: function(ctx, t){
-                ctx.drawImage(this.source, this.x + camera.x / 4, this.y, w, h, this.x, this.y, w, h);
+                ctx.drawImage(this.source, this.x + map.x / 4, this.y, w, h, this.x, this.y, w, h);
             }
         });
 
         this.foreground = new Drawable({
             source: backgroundGenerator.getForeground(w / 2 + main.width, main.height, rows, cols, distance),
             draw: function(ctx, t){
-                ctx.drawImage(this.source, this.x + camera.x, this.y, w, h, this.x, this.y, w, h);
+                ctx.drawImage(this.source, this.x + map.x, this.y, w, h, this.x, this.y, w, h);
             }
         });
 
-        var generator = new global.MapGenerator(resource);
-        this.map = generator.generateMap(w, h);
+        this.map = map;
         console.log(this.map)
     }
 
@@ -46,11 +43,10 @@
             var self = this;
             var map = this.map;
             var player = this.player;
-            var camera = this.camera;
             var resource = this.resource;
             var locationChanged = function(x, y){
                 if(map.locate(player, x, y)){
-                    camera.setLocation(x, y);
+                    map.camera(x, y);
                 }else{
                     return false;
                 }
@@ -84,20 +80,19 @@
             })
         },
         draw: function(ctx, t){
-            var camera = this.camera;
             var player = this.player;
-            var resource = this.resource;
+            var map = this.map;
 
             this.background.draw(ctx, t);
             this.foreground.draw(ctx, t);
 
-            this.map.draw(ctx, resource, camera.x, camera.y);
+            map.draw(ctx, t);
             
-            ctx.fillText(Math.round(camera.x) + ':' + Math.round(camera.y), 50, 90);
+            ctx.fillText(Math.round(map.x) + ':' + Math.round(map.y), 50, 90);
             ctx.fillText(Math.round(player.x) + ':' + Math.round(player.y), 50, 70);
 
             ctx.save();
-            ctx.translate(-camera.x, -camera.y);
+            ctx.translate(-map.x, -map.y);
             player.draw(ctx, t);
             ctx.restore();
         },

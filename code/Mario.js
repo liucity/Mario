@@ -18,12 +18,14 @@
         this.refreshSource();
         this.lives = 3;
         this.coins = 0;
-        this.acceleration = limitation.speed * 3;
-        this.climbSpeed = 0;
+        this.acceleration = limitation.speed * 5;
+        this.ay = 0;
         this.climbAcceleration = limitation.jump * 3;
         this.frameSX = 0;
         
         this.keys = {};
+
+        this.isMoveable = true;
     }
 
     Mario.prototype = new global.DrawableItem({
@@ -61,13 +63,13 @@
                 ctx.fillText(frame, 50, 50);
 
                 ctx.save();
-                ctx.translate(Math.round(this.x), Math.round(this.fixedY));
+                ctx.translate(Math.round(this.x), Math.round(this.drawY));
                 ctx.scale(flip ? -1 : 1, 1);
                 ctx.drawImage(img, frame * this.w, 0, this.w, this.h,
                                             -this.w / 2, 0, this.w, this.h);
-                // ctx.rect(-this.w / 2, 0, this.w, this.h);
-                // ctx.strokeStyle = 'red';
-                // ctx.stroke();
+                ctx.rect(-this.w / 2, 0, this.w, this.h);
+                ctx.strokeStyle = 'red';
+                ctx.stroke();
                 ctx.restore();
             }
         },
@@ -93,9 +95,18 @@
                         case 'ArrowUp':
                         case 'w':
                         case ' ':
-                            if(!this.ignoreJump) {
+                            if(!this.ignoreGravity && this.canJump) {
+                                this.ignoreGravity = true;
+                                this.jumpH = this.y;
+                            }
+
+                            if(this.ignoreGravity){
                                 this.jump(dt);
-                                if(this.y > Math.pow(limitation.jump, 2) / this.climbAcceleration / 2) this.ignoreJump = true; // max height = 1/2 * v * v / a
+                                if(this.y - this.jumpH > Math.pow(limitation.jump, 2) / this.climbAcceleration / 2)  // max height = 1/2 * v * v / a
+                                {
+                                    this.ignoreGravity = false;
+                                    this.canJump = false;
+                                }
                             }
                             isJump = true;
                             break;
@@ -114,51 +125,33 @@
                 }
             }
             
-            if(!isMove && this.speed !== 0) {
+            if(!isMove && this.ax !== 0) {
                 this.stop(dt);
             }
-            if(this.ignoreJump || !isJump) {
-                this.fall(dt);
-                this.ignoreJump = true;
+
+            if(!isJump && this.ignoreGravity){
+                this.ignoreGravity = false;
+                this.canJump = false;
             }
 
-            var newX = this.x + this.speed * dt;
-            var newY = Math.max(this.y + this.climbSpeed * dt, 0);
-
-            if(this.speed === 0){
-                this.frameSX = newX;
+            if(this.ax === 0){
+                this.frameSX = this.x;
             }
-            if(newY === 0) {
-                this.climbSpeed = 0;
-                this.ignoreJump = false;
-            }
-
-            if(this.speed || this.climbSpeed){
-                if(this.fire('moved', newX, newY) === false){
-                    newX = this.x;
-                    newY = this.y;
-                    this.frameSX = this.x;
-                }
-            }
-
-            this.x = newX;
-            this.y = newY;
+            // this.frameSX = this.x;
             
-            if(_status !== status.dying){
-                if(this.y) {
-                    _status = status.jumping;
-                }else if(this.speed){
-                    _status = status.moving;
-                }else{
-                    _status = status.normal;
-                }
+            if(this.ay) {
+                _status = status.jumping;
+            }else if(this.ax){
+                _status = status.moving;
+            }else{
+                _status = status.normal;
             }
 
             this.status = _status;
         },
 
         move: function(dt, _direction){
-            var speed = this.speed;
+            var speed = this.ax;
 
             switch(_direction){
                 case direction.LEFT:
@@ -170,46 +163,36 @@
             }
             
             this.face = speed < 0 ? direction.LEFT : direction.RIGHT;
-            this.speed = speed;
+            this.ax = speed;
         },
         
         stop: function(dt){
-            var speed = this.speed;
+            var speed = this.ax;
 
             if(speed < 0){
                 speed = Math.min(speed + this.acceleration * dt, 0);
-            }else if(this.speed > 0){
+            }else if(speed > 0){
                 speed = Math.max(speed - this.acceleration * dt, 0);
             }
 
-            this.speed = speed;
+            this.ax = speed;
         },
 
         jump: function(dt){
-            var speed = this.climbSpeed;
+            var speed = this.ay;
             if(!speed) {
                 this.fire('jumpStart', this.x, this.y);
             }
             if(this.fire('jump', this.x, this.y) === false){
-                this.climbSpeed = 0;
-                this.ignoreJump = true;
+                this.ay = 0;
+                this.ignoreGravity = false;
                 return;
             }
             if(speed < limitation.jump) {
                 speed = Math.min(speed + this.climbAcceleration * dt, limitation.jump);
             }
 
-            this.climbSpeed = speed;
-        },
-
-        fall: function(dt){
-            var speed = this.climbSpeed;
-            speed = speed - this.climbAcceleration * dt;
-            if(this.fire('fall', this.x, this.y) === false){
-                this.climbSpeed = 0;
-                return;
-            }
-            this.climbSpeed = speed;
+            this.ay = speed;
         },
 
         attack: function(){
