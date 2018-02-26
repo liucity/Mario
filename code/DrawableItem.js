@@ -37,10 +37,10 @@
         move: function(x, y){
 
         },
-        draw: function(ctx, resource, distance){
+        draw: function(ctx, t){
             var drawItem = ImageMap[this.key + this.frame];
             if(!drawItem) return;
-            ctx.drawImage(resource.getImage(drawItem.imgKey), drawItem.x, drawItem.y, drawItem.w, drawItem.h, 
+            ctx.drawImage(this.resource.getImage(drawItem.imgKey), drawItem.x, drawItem.y, drawItem.w, drawItem.h, 
                                         this.x - drawItem.w / 2, this.drawY, drawItem.w, drawItem.h);
             ctx.beginPath();
             ctx.rect(this.x - drawItem.w / 2, this.drawY, drawItem.w, drawItem.h);
@@ -62,7 +62,7 @@
         }
     });
 
-    DrawableItem.Create = function(x, y, key, frame){
+    DrawableItem.Create = function(resource, x, y, key, frame){
         var item = new DrawableItem();
 
         frame = frame === undefined ? '' : frame;
@@ -73,6 +73,7 @@
         item.ay = 0;
         item.key = key;
         item.frame = frame;
+        item.resource = resource;
 
         item.w = ImageMap[key + frame].w;
         item.h = ImageMap[key + frame].h;

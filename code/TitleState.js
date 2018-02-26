@@ -68,7 +68,6 @@
             });
             player.off('moved').on('moved', locationChanged);
             player.off('jump').on('jump', locationChanged);
-            player.off('fall').on('fall', locationChanged);
             player.off('jumpStart').on('jumpStart', function(x, y){
                 resource.playAudio('jump');
             })
@@ -91,10 +90,10 @@
             ctx.fillText(Math.round(map.x) + ':' + Math.round(map.y), 50, 90);
             ctx.fillText(Math.round(player.x) + ':' + Math.round(player.y), 50, 70);
 
-            ctx.save();
-            ctx.translate(-map.x, -map.y);
-            player.draw(ctx, t);
-            ctx.restore();
+            // ctx.save();
+            // ctx.translate(-map.x, -map.y);
+            // player.draw(ctx, t);
+            // ctx.restore();
         },
         destroy: function(){
             this.control.off('keydown.title');

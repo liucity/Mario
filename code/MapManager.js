@@ -13,10 +13,9 @@
         return max(minV, min(v, maxV));
     }
 
-    var MapManager = function(resource, baseLineHeight, width, height, screenW, screenH){
+    var MapManager = function(baseLineHeight, width, height, screenW, screenH){
         intArgs(arguments);
 
-        this.resource = resource;
         this.baseY = baseLineHeight;
         this.w = width;
         this.h = height;
@@ -77,15 +76,15 @@
                 row[_y] = item;
             });
         },
-        checkCollide: function(item, x, y){
+        getItemsInRange: function(x, y, w, h, item){
             var collideObjs = [];
-            this.pointInRange(x - item.w / 2, y, item.w, item.h, function(obj, row, _x, _y){
+            this.pointInRange(x, y, w, h, function(obj, row, _x, _y){
                 if(obj != null && collideObjs.indexOf(obj) === -1 && item !== obj) collideObjs.push(obj);
             });
             return collideObjs;
         },
         locate: function(item, x, y){
-            var collideObjs = this.checkCollide(item);
+            var collideObjs = this.getItemsInRange(item.x - item.w / 2, item.y, item.w, item.h, item);
             if(collideObjs.length) {
                 return item.collide.apply(item, collideObjs);
             }
@@ -124,14 +123,12 @@
         draw: function(ctx, t){
             this.updateStatus(t);
 
-            var distance = this.distance;
-            var resource = this.resource;
-
-            this.items.forEach(function(item){
-                if(!item.customDraw){
-                    item.draw(ctx, resource, distance);
-                }
+            ctx.save();
+            ctx.translate(-this.x, -this.y);
+            this.getItemsInRange(this.x, this.y, this.screenW, this.screenH).forEach(function(item){
+                item.draw(ctx, t);
             });
+            ctx.restore();
             // var x = 0;
             // var item;
             // for(var key in map){
@@ -179,7 +176,7 @@
 
             if(dx === 0 && dy === 0) return false;
 
-            var collideObjs = this.checkCollide(item, item.x, item.y + dy);
+            var collideObjs = this.getItemsInRange(item.x - item.w / 2, item.y + dy, item.w, item.h, item);
             if(collideObjs.length){
                 if(item.ay > 0){
                     dy = Math.min.apply(null, collideObjs.map(function(obj){
@@ -194,7 +191,7 @@
                 item.ignoreGravity = false;
             }
 
-            collideObjs = this.checkCollide(item, item.x + dx, item.y);
+            collideObjs = this.getItemsInRange(item.x - item.w / 2 + dx, item.y, item.w, item.h, item);
             if(collideObjs.length){
                 if(item.ax > 0){
                     dx = Math.min.apply(null, collideObjs.map(function(obj){
@@ -208,16 +205,13 @@
                 item.ax = 0;
             }
 
-            if(item.fire('moved', item.x + dx, item.y + dy) === false){
-                // item.ax = 0;
-                // item.ay = 0;
-                // dx = 0;
-                // dy = 0;
-            }
+            if(dx === 0 && dy === 0) return false;
 
             item.y += dy;
             item.drawY = this.getDrawY(item.y);
             item.x += dx;
+
+            item.fire('moved', item.x, item.y);
         },
 
         getTimeStamp: function(key, t){

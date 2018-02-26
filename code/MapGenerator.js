@@ -12,11 +12,11 @@
     MapGenerator.prototype = {
         generateMap: function(resource, w, h, screenW, screenH){
             var distance = 16;
-            var map = new MapManager(resource, distance, w, h, screenW, screenH);
+            var map = new MapManager(distance, w, h, screenW, screenH);
             var x = 0;
 
             while(x < w){
-                map.add(DrawableItem.Create(x, distance, 'top'));
+                map.add(DrawableItem.Create(resource, x, distance, 'top'));
                 x += distance;
             }
 

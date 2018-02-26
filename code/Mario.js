@@ -100,7 +100,7 @@
                                 this.jumpH = this.y;
                             }
 
-                            if(this.ignoreGravity){
+                            if(this.ignoreGravity && this.canJump){
                                 this.jump(dt);
                                 if(this.y - this.jumpH > Math.pow(limitation.jump, 2) / this.climbAcceleration / 2)  // max height = 1/2 * v * v / a
                                 {
