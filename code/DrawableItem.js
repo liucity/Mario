@@ -54,11 +54,11 @@
             return false;
         },
         destroy: function(){
-
+            this.manager.remove(this);
         },
         die: function(){
             this.status = status.dying;
-            this.fire('die.start', this.x, this.y);
+            if(this.fire('die.start', this.x, this.y) !== false) this.destroy();
         }
     });
 

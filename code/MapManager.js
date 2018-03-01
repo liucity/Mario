@@ -55,10 +55,12 @@
             });
         },
         remove: function(){
+            var self = this;
             var args = toArray(arguments);
 
             this.items = this.items.filter(function(item){
                 if(args.indexOf(item) > -1){
+                    self.cleanLocation(item);
                     item.manager = null;
                     item.drawY = null;
                     return false;
@@ -187,6 +189,7 @@
                         return obj.y + obj.h;
                     })) - item.y;
                 }
+                
                 item.ay = 0;
                 item.ignoreGravity = false;
             }
@@ -207,11 +210,13 @@
 
             if(dx === 0 && dy === 0) return false;
 
+            item.x += dx;
             item.y += dy;
             item.drawY = this.getDrawY(item.y);
-            item.x += dx;
 
             item.fire('moved', item.x, item.y);
+
+            if(item.y - item.h < 0) item.die();
         },
 
         getTimeStamp: function(key, t){
